@@ -12,7 +12,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer f.Close()
 
 	lines := getLinesChannel(f)
 
@@ -20,8 +19,11 @@ func main() {
 		fmt.Printf("read: %s\n", line)
 	}
 
+	f.Close()
+
 }
 
+// I don't fully understand this entire signature, what is <-chan doing here, is the function a receiver to chan or is it returning chan string (unlikely).
 func getLinesChannel(f io.ReadCloser) <-chan string {
 	// Channel of strings.
 	chan_strings := make(chan string)
@@ -51,10 +53,6 @@ func getLinesChannel(f io.ReadCloser) <-chan string {
 		}
 		close(chan_strings)
 	}()
-
-	if current_line != "" {
-		fmt.Printf("read: %s\n", current_line)
-	}
 
 	return chan_strings
 }
