@@ -14,7 +14,11 @@ func main() {
 	}
 	defer f.Close()
 
-	getLinesChannel(f)
+	lines := getLinesChannel(f)
+
+	for line := range lines {
+		fmt.Printf("read: %s\n", line)
+	}
 
 }
 
@@ -45,11 +49,12 @@ func getLinesChannel(f io.ReadCloser) <-chan string {
 			}
 			current_line = current_line + parts[len(parts)-1]
 		}
+		close(chan_strings)
 	}()
 
 	if current_line != "" {
 		fmt.Printf("read: %s\n", current_line)
 	}
 
-	return nil
+	return chan_strings
 }
