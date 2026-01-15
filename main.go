@@ -29,10 +29,10 @@ func getLinesChannel(f io.ReadCloser) <-chan string {
 	// Channel of strings.
 	chanStrings := make(chan string)
 	currentLine := ""
+	b := make([]byte, 8)
 
 	go func() {
 		for {
-			b := make([]byte, 8)
 			n, err := f.Read(b)
 			if err == io.EOF {
 				break
