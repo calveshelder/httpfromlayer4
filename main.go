@@ -27,8 +27,8 @@ func main() {
 // I don't fully understand this entire signature, what is <-chan doing here, is the function a receiver to chan or is it returning chan string (unlikely).
 func getLinesChannel(f io.ReadCloser) <-chan string {
 	// Channel of strings.
-	chan_strings := make(chan string)
-	current_line := ""
+	chanStrings := make(chan string)
+	currentLine := ""
 
 	go func() {
 		for {
@@ -47,20 +47,20 @@ func getLinesChannel(f io.ReadCloser) <-chan string {
 			parts := []string{}
 			parts = strings.Split(str, "\n")
 			for i := 0; i < len(parts)-1; i++ {
-				current_line = current_line + parts[i]
+				currentLine = currentLine + parts[i]
 				// Send line to channel.
-				chan_strings <- current_line
-				current_line = ""
+				chanStrings <- currentLine
+				currentLine = ""
 			}
-			current_line = current_line + parts[len(parts)-1]
+			currentLine = currentLine + parts[len(parts)-1]
 		}
 
-		if current_line != "" {
-			chan_strings <- current_line
+		if currentLine != "" {
+			chanStrings <- currentLine
 		}
 
-		close(chan_strings)
+		close(chanStrings)
 	}()
 
-	return chan_strings
+	return chanStrings
 }
