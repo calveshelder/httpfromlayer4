@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"strings"
 )
@@ -37,7 +38,9 @@ func getLinesChannel(f io.ReadCloser) <-chan string {
 				break
 			}
 			if err != nil {
-				panic(err)
+				log.Fatal(err)
+				return
+
 			}
 			// After reading 8 bytes, split the data on newlines (\n) to create a slice of strings - let's call these split sections "parts". There will typically only be one or two "parts" because we're only reading 8 bytes at a time.
 			str := string(b[:n])
@@ -51,6 +54,11 @@ func getLinesChannel(f io.ReadCloser) <-chan string {
 			}
 			current_line = current_line + parts[len(parts)-1]
 		}
+
+		if current_line != "" {
+			chan_strings <- current_line
+		}
+
 		close(chan_strings)
 	}()
 
