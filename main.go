@@ -19,12 +19,11 @@ func main() {
 	for line := range lines {
 		fmt.Printf("read: %s\n", line)
 	}
-
-	f.Close()
-
 }
 
 // I don't fully understand this entire signature, what is <-chan doing here, is the function a receiver to chan or is it returning chan string (unlikely).
+// Update:
+// Got it. Function takes a parameter f of io.ReadCloser and will return a receive-only channel for strings to a caller.
 func getLinesChannel(f io.ReadCloser) <-chan string {
 	// Channel of strings.
 	chanStrings := make(chan string)
@@ -32,6 +31,9 @@ func getLinesChannel(f io.ReadCloser) <-chan string {
 	b := make([]byte, 8)
 
 	go func() {
+		defer f.Close()
+		defer close(chanStrings)
+
 		for {
 			n, err := f.Read(b)
 			if err == io.EOF {
@@ -58,8 +60,6 @@ func getLinesChannel(f io.ReadCloser) <-chan string {
 		if currentLine != "" {
 			chanStrings <- currentLine
 		}
-
-		close(chanStrings)
 	}()
 
 	return chanStrings
