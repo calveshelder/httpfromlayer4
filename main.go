@@ -46,15 +46,14 @@ func getLinesChannel(f io.ReadCloser) <-chan string {
 			}
 			// After reading 8 bytes, split the data on newlines (\n) to create a slice of strings - let's call these split sections "parts". There will typically only be one or two "parts" because we're only reading 8 bytes at a time.
 			str := string(b[:n])
-			parts := []string{}
-			parts = strings.Split(str, "\n")
+			parts := strings.Split(str, "\n")
 			for i := 0; i < len(parts)-1; i++ {
 				currentLine = currentLine + parts[i]
 				// Send line to channel.
 				chanStrings <- currentLine
 				currentLine = ""
 			}
-			currentLine = currentLine + parts[len(parts)-1]
+			currentLine += parts[len(parts)-1]
 		}
 
 		if currentLine != "" {
