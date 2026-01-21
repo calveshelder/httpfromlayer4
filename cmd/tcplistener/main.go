@@ -4,21 +4,35 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"os"
+	"net"
 	"strings"
 )
 
 func main() {
-	f, err := os.Open("messages.txt")
+	listener, err := net.Listen("tcp", ":42069")
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
-	lines := getLinesChannel(f)
+	defer listener.Close()
 
-	for line := range lines {
-		fmt.Printf("read: %s\n", line)
+	for {
+		// Wait a connection.
+		conn, err := listener.Accept()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Println("a connection has been accepted")
+
+		lines := getLinesChannel(conn)
+
+		for line := range lines {
+			fmt.Println("\n", line)
+		}
+		fmt.Println("the connection has been closed")
 	}
+
 }
 
 // I don't fully understand this entire signature, what is <-chan doing here, is the function a receiver to chan or is it returning chan string (unlikely).

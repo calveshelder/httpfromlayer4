@@ -1,0 +1,34 @@
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"log"
+	"net"
+	"os"
+)
+
+func main() {
+	udpAddress, err := net.ResolveUDPAddr("udp", "localhost:42069")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	conn, err := net.DialUDP("udp", nil, udpAddress)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer conn.Close()
+
+	reader := bufio.NewReader(os.Stdin)
+
+	for {
+		fmt.Print("> ")
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			log.Fatal(err)
+		}
+		conn.Write([]byte(line))
+	}
+}
