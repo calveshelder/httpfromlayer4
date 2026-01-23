@@ -38,10 +38,10 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 	return req, nil
 }
 
-func parseRequestLine(firstLine string) (RequestLine, error) {
+func parseRequestLine(data []byte) (RequestLine, int, error) {
 	parts := strings.Split(firstLine, " ")
 	if len(parts) != 3 {
-		return RequestLine{}, errors.New("Invalid string")
+		return RequestLine{}, 0, errors.New("Invalid string")
 	}
 
 	method := parts[0]
@@ -55,7 +55,7 @@ func parseRequestLine(firstLine string) (RequestLine, error) {
 		isValid := isLetter && isUpper
 
 		if !isValid {
-			return RequestLine{}, errors.New("Method is not valid")
+			return RequestLine{}, 0, errors.New("Method is not valid")
 		}
 	}
 
@@ -65,5 +65,5 @@ func parseRequestLine(firstLine string) (RequestLine, error) {
 		HttpVersion:   number,
 	}
 
-	return rl, nil
+	return rl, 0, nil
 }
