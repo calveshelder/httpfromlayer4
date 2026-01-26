@@ -2,10 +2,9 @@ package main
 
 import (
 	"fmt"
-	"io"
+	"github.com/calveshelder/httpfromlayer4/internal/request"
 	"log"
 	"net"
-	"strings"
 )
 
 func main() {
@@ -23,57 +22,16 @@ func main() {
 			log.Fatal(err)
 		}
 
-		fmt.Println("a connection has been accepted")
+		rl, err := request.RequestFromReader(conn)
 
-		lines := getLinesChannel(conn)
-
-		for line := range lines {
-			fmt.Println("\n", line)
+		if err != nil {
+			log.Fatal("Invalid request")
 		}
-		fmt.Println("the connection has been closed")
+
+		fmt.Println("Request line:")
+		fmt.Printf("- Method: %s\n", rl.RequestLine.Method)
+		fmt.Printf("- Target: %s\n", rl.RequestLine.RequestTarget)
+		fmt.Printf("- Version: %s\n", rl.RequestLine.HttpVersion)
 	}
 
-}
-
-// I don't fully understand this entire signature, what is <-chan doing here, is the function a receiver to chan or is it returning chan string (unlikely).
-// Update:
-// Got it. Function takes a parameter f of io.ReadCloser and will return a receive-only channel for strings to a caller.
-func getLinesChannel(f io.ReadCloser) <-chan string {
-	// Channel of strings.
-	chanStrings := make(chan string)
-	currentLine := ""
-	b := make([]byte, 8)
-
-	go func() {
-		defer f.Close()
-		defer close(chanStrings)
-
-		for {
-			n, err := f.Read(b)
-			if err == io.EOF {
-				break
-			}
-			if err != nil {
-				log.Fatal(err)
-				return
-
-			}
-			// After reading 8 bytes, split the data on newlines (\n) to create a slice of strings - let's call these split sections "parts". There will typically only be one or two "parts" because we're only reading 8 bytes at a time.
-			str := string(b[:n])
-			parts := strings.Split(str, "\n")
-			for i := 0; i < len(parts)-1; i++ {
-				currentLine = currentLine + parts[i]
-				// Send line to channel.
-				chanStrings <- currentLine
-				currentLine = ""
-			}
-			currentLine += parts[len(parts)-1]
-		}
-
-		if currentLine != "" {
-			chanStrings <- currentLine
-		}
-	}()
-
-	return chanStrings
 }
