@@ -2,10 +2,13 @@ package headers
 
 import (
 	"errors"
+	"regexp"
 	"strings"
 )
 
 type Headers map[string]string
+
+var re = regexp.MustCompile(`^[a-z0-9!#$%^&*_+\-|'.~]*$`)
 
 func NewHeaders() Headers {
 	return Headers{}
@@ -31,10 +34,18 @@ func (h Headers) Parse(data []byte) (n int, done bool, err error) {
 		return 0, false, errors.New("invalid header")
 	}
 
-	key := strings.TrimSpace(trimmed[:colonIndex])
+	key := strings.ToLower(strings.TrimSpace(trimmed[:colonIndex]))
 	value := strings.TrimSpace(trimmed[colonIndex+1:])
 
-	h[key] = value
+	if re.MatchString(key) {
+		if existing, ok := h[key]; ok {
+			h[key] = existing + "," + value
+		} else {
+			h[key] = value
+		}
+	} else {
+		return 0, false, errors.New("invalid character")
+	}
 
 	n = lineEnd + len("\r\n")
 
