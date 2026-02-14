@@ -20,6 +20,7 @@ type RequestLine struct {
 
 const (
 	requestStateInitialised = iota
+	requestStateParsingHeaders
 	requestStateDone
 )
 
@@ -119,13 +120,21 @@ func (r *Request) parse(data []byte) (int, error) {
 			return n, nil
 		}
 		r.RequestLine = rl
-		r.state = requestStateDone
+		r.state = requestStateParsingHeaders
 		return n, nil
 	}
+	if r.state == requestStateParsingHeaders {
+		// Parse headers.
+	}
+
 	if r.state == requestStateDone {
 		return 0, errors.New("Trying to read data in a done state")
 	}
 
 	return 0, errors.New("unknown state")
 
+}
+
+func parseSingle() {
+	// Switch/case logic
 }
