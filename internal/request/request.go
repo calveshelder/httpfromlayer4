@@ -10,6 +10,7 @@ import (
 type Request struct {
 	RequestLine RequestLine
 	state       int
+	Headers     map[string]string
 }
 
 type RequestLine struct {
@@ -31,7 +32,8 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 	readToIndex := 0
 
 	r := &Request{
-		state: requestStateInitialised,
+		state:   requestStateInitialised,
+		Headers: make(map[string]string),
 	}
 
 	for r.state != requestStateDone {
@@ -111,30 +113,98 @@ func parseRequestLine(data []byte) (RequestLine, int, error) {
 }
 
 func (r *Request) parse(data []byte) (int, error) {
-	if r.state == requestStateInitialised {
-		rl, n, err := parseRequestLine(data)
+	totalBytesParsed := 0
+
+	for r.state != requestStateDone {
+		n, err := r.parseSingle(data[totalBytesParsed:])
 		if err != nil {
-			return n, err
+			return totalBytesParsed, err
 		}
+
 		if n == 0 {
 			return n, nil
 		}
-		r.RequestLine = rl
-		r.state = requestStateParsingHeaders
-		return n, nil
-	}
-	if r.state == requestStateParsingHeaders {
-		// Parse headers.
+
+		totalBytesParsed += n
 	}
 
-	if r.state == requestStateDone {
-		return 0, errors.New("Trying to read data in a done state")
-	}
-
-	return 0, errors.New("unknown state")
+	return totalBytesParsed, nil
 
 }
 
-func parseSingle() {
+func (r *Request) parseSingle(data []byte) (int, error) {
 	// Switch/case logic
+	switch r.state {
+	case requestStateInitialised:
+		//parseRequestLine
+		rl, n, err := parseRequestLine(data)
+
+		if err != nil {
+			return n, err
+		}
+
+		if n == 0 {
+			return 0, nil
+		}
+
+		r.RequestLine = rl
+		r.state = requestStateParsingHeaders
+		return n, nil
+	case requestStateParsingHeaders:
+		k, v, n, err := parseHeader(data)
+		if err != nil {
+			return n, err
+		}
+
+		if k == "" && v == "" {
+			r.state = requestStateDone
+			return n, nil
+		}
+
+		r.Headers[k] = v
+		return n, err
+
+	case requestStateDone:
+		return 0, errors.New("trying to parse in done state")
+	default:
+		return 0, errors.New("unknown state")
+	}
+
+	// What do we return outside?
+	return 0, errors.New("unreachable")
+}
+
+func parseHeader(data []byte) (key string, value string, bytesConsumed int, err error) {
+	// 1. Find \r\n
+	lineEnd := strings.Index(string(data), "\r\n")
+
+	// 2. If not found, need more data.
+	if lineEnd == -1 {
+		return "", "", 0, nil
+	}
+
+	if lineEnd == 0 {
+		return "", "", 2, nil
+	}
+
+	// 3. Split by the colon to get the key and the value.
+	line := string(data[:lineEnd])
+	split := strings.SplitN(line, ":", 2)
+
+	// 4. Check if we got exactly 2 parts (key and value).
+	if len(split) != 2 {
+		return "", "", 0, errors.New("Malformed header: missing colon")
+	}
+
+	key = split[0]
+	value = split[1]
+
+	// 5. Lowecase key, trim whitespace from value.
+	key = strings.ToLower(key)
+	value = strings.TrimSpace(value)
+
+	// 6. Calculate bytes consumed.
+	bytesConsumed = lineEnd + 2 // + 2 is for \r\n.
+
+	return key, value, 0, nil
 }
