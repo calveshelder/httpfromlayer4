@@ -1,3 +1,13 @@
+package main
+
+import (
+	"github.com/calveshelder/httpfromlayer4/internal/server"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
+)
+
 const port = 42069
 
 func main() {
@@ -13,4 +23,3 @@ func main() {
 	<-sigChan
 	log.Println("Server gracefully stopped")
 }
-
