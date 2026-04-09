@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net"
 	"sync/atomic"
+
+	"github.com/calveshelder/httpfromlayer4/internal/response"
 )
 
 type Server struct {
@@ -48,11 +50,7 @@ func (s *Server) listen() {
 }
 
 func (s *Server) handle(conn net.Conn) {
-	status := "HTTP/1.1 200 OK"
-	contentType := "text/plain"
-	contentLength := "13"
-	contentBody := "Hello World!"
-
-	conn.Write([]byte(fmt.Sprintf("%s\r\n%sContent-Type: \r\n%sContent-Length: \r\n\r\n%s", status, contentType, contentLength, contentBody)))
-	conn.Close()
+	_ = response.WriteStatusLine(conn, response.StatusOk)
+	headers := response.GetDefaultHeaders(0)
+	_ = response.WriteHeaders(conn, headers)
 }
