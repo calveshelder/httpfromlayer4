@@ -9,10 +9,14 @@ import (
 
 type StatusCode int
 
+type Writer struct {
+	writer io.Writer
+}
+
 const (
-	StatusOk StatusCode = iota
-	BadRequest
-	InternalServerError
+	StatusOk            StatusCode = 200
+	BadRequest          StatusCode = 400
+	InternalServerError StatusCode = 500
 )
 
 var statusName = map[StatusCode]string{
@@ -34,7 +38,7 @@ func GetDefaultHeaders(contentLen int) headers.Headers {
 	h := headers.NewHeaders()
 	h["Content-Length"] = fmt.Sprintf("%d", contentLen)
 	h["Connection"] = "close"
-	h["Content-Type"] = "text/plain"
+	h["Content-Type"] = "text/html"
 	return h
 }
 
@@ -49,4 +53,20 @@ func WriteHeaders(w io.Writer, headers headers.Headers) error {
 
 	return err
 
+}
+
+func NewWriter(w io.Writer) *Writer {
+	return &Writer{writer: w}
+}
+
+func (w *Writer) WriteStatusLine(statusCode StatusCode) error {
+	return WriteStatusLine(w.writer, statusCode)
+}
+
+func (w *Writer) WriteHeaders(headers headers.Headers) error {
+	return WriteHeaders(w.writer, headers)
+}
+
+func (w *Writer) Write(p []byte) (int, error) {
+	return w.writer.Write(p)
 }

@@ -1,7 +1,6 @@
 package server
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -19,7 +18,7 @@ type Server struct {
 	handler   Handler
 }
 
-type Handler func(w io.Writer, req *request.Request) *HandlerError
+type Handler func(w *response.Writer, req *request.Request) *HandlerError
 
 type HandlerError struct {
 	Status  int
@@ -67,16 +66,12 @@ func (s *Server) handle(conn net.Conn) {
 		log.Println(err)
 		return
 	}
-	buf := bytes.NewBuffer([]byte{})
-	handlerErr := s.handler(buf, req)
+	rw := response.NewWriter(conn)
+	handlerErr := s.handler(rw, req)
 	if handlerErr != nil {
-		handlerErr.Write(conn)
+		handlerErr.Write(rw)
 		return
 	}
-	_ = response.WriteStatusLine(conn, response.StatusOk)
-	headers := response.GetDefaultHeaders(buf.Len())
-	_ = response.WriteHeaders(conn, headers)
-	_, _ = conn.Write(buf.Bytes())
 }
 
 func (he HandlerError) Write(w io.Writer) error {
